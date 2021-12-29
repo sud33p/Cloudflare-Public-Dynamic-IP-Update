@@ -6,7 +6,7 @@
 ## basic shell scripting guide https://blog.gaerae.com/2015/01/bash-hello-world.html
 
 ## get current public IP address
-currentIP=$(curl -s checkip.amazonaws.com)
+currentIP=$(curl -s6 https://icanhazip.com/)
 if [[ $? == 0 ]] && [[ ${currentIP} ]]; then  ## when dig command run without error,
     ## Making substring, only retrieving ip address of this server
     ## https://stackabuse.com/substrings-in-bash/
@@ -16,6 +16,17 @@ else  ## error happens,
     echo "Check your internet connection"
     exit
 fi
+
+# compare currentIP with stored-ip
+STORED_IP_FILE=./stored-ip.txt
+storedIP=$([ -f "$STORED_IP_FILE" ] && cat $STORED_IP_FILE  || echo "NULL")
+  if [[ $currentIP == $storedIP ]]; then
+    echo "${name[index]}: no needs to update (checked against $STORED_IP_FILE)"
+    exit
+  fi
+
+#save current ip to file store to check against next time
+echo currentIP > $STORED_IP_FILE
 
 ## Read configuration from separated config.json (created by configure.bash)
 CONFIG_PATH=$(cd $(dirname $0) && pwd)"/config.json"
@@ -53,12 +64,13 @@ while [[ $index -lt ${#id[@]} ]]; do # For all update targets in config file
 
   # compare recordIP with currentIP
   if [[ $(echo $dnsStatusAPICall | jq -r .result.content) == $currentIP ]]; then
-    echo "${name[index]}: no needs to update"
+    echo "${name[index]}: no needs to update (checked against recordIP from api call)"
   else # Need to update
+    dnsType=$(echo $dnsStatusAPICall | jq -r .result.type)
     proxied=$(echo $dnsStatusAPICall | jq -r .result.proxied)
     ttl=$(echo $dnsStatusAPICall | jq -r .result.ttl)
     # JSON requestBody
-    data="{\"type\":\"A\",\"name\":\"${name[index]}\",\"content\":\"$currentIP\",\"ttl\":$ttl,\"proxied\":$proxied}"
+    data="{\"type\":$dnsType,\"name\":\"${name[index]}\",\"content\":\"$currentIP\",\"ttl\":$ttl,\"proxied\":$proxied}"
     unset proxied
     unset ttl
     

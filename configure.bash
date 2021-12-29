@@ -46,13 +46,13 @@ unset zoneCount
 unset index
 unset apiCall
 
-# Retrieve A records update target
+# Retrieve A and AAAA records update target
 updateTarget=""
 count=0
 echo -e "\ntype \"y\" for the DNS entry you want to enable dynamic ip update"
 echo -e "Otherwise, type \"n\"\n"
 for zoneID in ${zoneIDs[@]}; do
-  apiCall=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$zoneID/dns_records?type=A&per_page=50" \
+  apiCall=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$zoneID/dns_records?type=A,AAAA&per_page=50" \
                     -H "Authorization: Bearer $apiToken" \
                     -H "Content-Type: application/json" | jq .)
   
